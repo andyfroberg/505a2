@@ -13,6 +13,14 @@ import sys
 
 
 class ThreadPractice:
+    """
+    This program allows the user to type a sentence one word at a time.
+    Depending on if a lock is used, how long the user chooses to sleep,
+    and how fast the user types and enters new words in the sentence,
+    the program may or may not receive the words the user typed correctly.
+    (The 'correct sentence' line shows what the sentence should be and the
+    'your sentence' line shows what the program received based on the inputs.)
+    """
     def __init__(self, lock=False, sleep_time=1.0):
         self.correct_sentence = ""
         self.sentence = ""
@@ -20,6 +28,11 @@ class ThreadPractice:
         self.sleep_time = sleep_time
 
     def run(self):
+        """
+        The main loop of the program (described above). The user can quit
+        by typing the letter 'q' and pressing enter. (The user must do
+        this twice in a row in order to quit the program.) 
+        """
         running = True
         while running:
             if not self.sentence == "":
@@ -34,8 +47,11 @@ class ThreadPractice:
             else:
                 self.add_word_unlocked(word)
 
-
     def add_word_unlocked(self, word):
+        """
+        Adds a word to the sentence. May not give the correct output
+        if the user cannot type fast enough.
+        """
         self.correct_sentence += word + " "
         current_sentence = self.sentence
         current_sentence += word + " "
@@ -43,12 +59,17 @@ class ThreadPractice:
         self.sentence = current_sentence
 
     def add_word_locked(self, word):
+        """
+        Adds words to a sentence. This method should give the correct
+        output even if the user types slowly.
+        """
         self.correct_sentence += word + " "
         with self.lock:
             current_sentence = self.sentence
             current_sentence += word + " "
             time.sleep(self.sleep_time)
             self.sentence = current_sentence
+
 
 if __name__ == "__main__":
     print(f'\nThis program allows you to type a sentence one word at a time.' \

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Citations
 https://realpython.com/intro-to-python-threading/
@@ -9,8 +10,66 @@ https://superfastpython.com/threadpoolexecutor-wait-all-tasks/
 import time
 import threading
 import concurrent.futures
-import sys
 import random
+
+class ThreadConcurrent:
+    """
+    This program generates poker hands and asks the user how many
+    royal flush hands they would like to draw and how many threads
+    they would like to use. (A royal flush is a poker hand that 
+    includes the cards '10', 'J', 'Q', 'K', 'A', all being the
+    same suit.)
+    """
+    def __init__(self, lock=True):
+        self.lock = threading.Lock() if lock else None
+        self.royal_flush_count = 0
+
+    def draw_number_of_royal_flushes(self, num):
+        """
+        Allows the user to ask for a number of royal flush
+        draws. Each time a royal flush is drawn, the 
+        royal_flush_count field is updated.
+        """
+        while self.royal_flush_count < num:
+            result = self.draw_hand()
+            if result == "Not a royal flush.":
+                continue
+            else:
+                self.royal_flush_count += 1
+
+    def draw_hand(self):
+        """
+        Creates a new deck (shuffled), then draws
+        and returns a hand of five cards to the caller.
+        """
+        deck = Deck()
+        hand = [deck.draw_card() for i in range(5)]
+        return hand
+        
+    def hand_is_royal_flush(self, hand):
+        """
+        Determines whether param: hand is a royal flush.
+        First checks that all cards in the hand are of
+        the same suit. Then, the hand is checked to see
+        if all the necessary card ranks are present for
+        the hand to be a royal flush.
+        """
+        suit = hand[0].suit
+        for card in hand:
+            if card.suit == suit:
+                continue
+            else:
+                return False
+            
+        for card in hand:
+            if card.rank == '10' or card.rank == 'J' or card.rank == 'Q' \
+                    or card.rank == 'K' or card.rank == 'A':
+                continue
+            else:
+                return False
+        
+        return True
+
 
 class Card:
     def __init__(self, 
@@ -20,6 +79,10 @@ class Card:
         self.suit = suit
 
     def __str__(self):
+        """
+        Creates a string representation of the card
+        (used for debugging).
+        """
         return str(f'{self.rank}-{self.suit}')
     
 
@@ -28,6 +91,11 @@ class Deck:
         self.cards = self.get_cards(shuffled=True)
 
     def get_cards(self, shuffled=True):
+        """
+        Returns a deck of all 52 distinct cards in a standard deck.
+        If param: shuffled is True, then the cards are shuffled
+        and the newly shuffled deck is returned.
+        """
         ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A']
         suits = ['Spades', 'Diamonds', 'Clubs', 'Hearts']
         deck = []
@@ -43,106 +111,29 @@ class Deck:
         return deck
     
     def draw_card(self):
+        """
+        Draws a single card from the deck. If the deck is empty,
+        then a new deck is created before drawing a card.
+        """
         if self.cards:
             return self.cards.pop()
         else:  # Out of cards; re-shuffle deck
             self.cards = self.get_cards
             return self.cards.pop()
-        
-
-
-class ThreadConcurrent:
-    def __init__(self, lock=True):
-        self.lock = threading.Lock() if lock else None
-        self.hand_count = 0
-
-    def try_to_draw_royal_flush(self):
-        still_trying = True
-        while still_trying:
-            result = self.draw_hand()
-            if result == "Not a royal flush.":
-                continue
-            else:
-                return result
-
-    def try_to_draw_two_consecutive_royal_flushes(self):
-        still_trying = True
-        while still_trying:
-            hand1 = self.draw_hand()
-            # print(str(hand1[0]))
-            hand2 = self.draw_hand()
-            if self.hand_is_royal_flush(hand1) and self.hand_is_royal_flush(hand2):
-                return
-            else:
-                continue
-
-    def draw_hand(self):
-        deck = Deck()
-        hand = [deck.draw_card() for i in range(5)]
-        return hand
-        
-    def hand_is_royal_flush(self, hand):
-        suit = hand[0].suit
-        for card in hand:
-            if card.suit == suit:
-                continue
-            else:
-                return False
-        
-        for card in hand:
-            if card.rank == '10' or card.rank == 'J' or card.rank == 'Q' \
-                    or card.rank == 'K' or card.rank == 'A':
-                continue
-            else:
-                return False
-        
-        return True
 
 
 if __name__ == "__main__":
     print(f'\nThis program calculates how long it takes to draw a royal flush' \
         '\n from a deck of cards. A royal flush is a hand of the same suit that' \
         '\n contains the ranks "10", "J", "Q", "K", and "A".\n')
-    start_time = time.time()
+    num_royal_flushes = int(input("How many royal flushes would you like to draw? "))
     num_threads = int(input("How many threads would you like to use? "))
     tc = ThreadConcurrent(lock=True)
+    start_time = time.time()
+
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
-        # futures = [executor.submit(tc.try_to_draw_two_consecutive_royal_flushes for i in range(num_threads))]
-        # concurrent.futures.wait(futures)
         for i in range(num_threads):
-            executor.submit(tc.try_to_draw_two_consecutive_royal_flushes)
+            executor.submit(tc.draw_number_of_royal_flushes, num_royal_flushes)
 
     total_time = time.time() - start_time
-    print(f'It took {total_time} milliseconds to draw a royal flush.')
-
-
-    
-    
-    # print(f'\nThis program allows you to type a sentence one word at a time.' \
-    #     '\nTyping words quickly when the lock causes some words to be dropped.' \
-    #     '\nIf the lock is on, the sentence will be displayed correctly.\n')
-    # ceiling = int(input("Up to what number would you like to calculate the primes? "))
-    # num_threads = int(input("How many threads would you like to use? "))
-    # region_size = ceiling // num_threads
-
-
-    # tc = ThreadConcurrent(ceiling, lock=True)
-    # with concurrent.futures.ThreadPoolExecutor(max_workers=num_threads) as executor:
-        # for i in range(num_threads):
-        #     start_index = i * region_size   # Double check for OBOE
-        #     end_index = (i + 1) * region_size  # Double check for OBOE
-        #     executor.submit(tc.calculate_primes, start_index, end_index)
-        #     final = [i for i in range(tc.ceiling + 1) if tc.nums[i]]
-        #     print(final)
-        
-        # futures = [executor.submit(tc.calculate_primes, i * region_size, (i + 1) * region_size) for i in range(num_threads)]
-        # concurrent.futures.wait(futures)
-        # final = [i for i in range(tc.ceiling + 1) if tc.nums[i]]
-        # print(final)
-        
-
-
-
-# def find_primes(self):
-    #     all_nums = [1] * (self.primes_up_to + 1)
-    #     all_nums[0], all_nums[1] = 0, 0
+    print(f'It took {total_time} seconds to draw a royal flush.')
