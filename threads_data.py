@@ -1,13 +1,15 @@
+#!/usr/bin/env python3
 """
 Citations
 https://realpython.com/intro-to-python-threading/
 https://www.youtube.com/watch?v=usyg5vbni34
+https://stackoverflow.com/questions/905189/why-does-sys-exit-not-exit-when-called-inside-a-thread-in-python
 """
 
-import logging
 import time
 import threading
 import concurrent.futures
+import sys
 
 
 class ThreadPractice:
@@ -20,12 +22,13 @@ class ThreadPractice:
     def run(self):
         running = True
         while running:
-            print(f'\nCorrect sentence:\n{self.correct_sentence}')
-            print(f'Your sentence:\n{self.sentence}')
+            if not self.sentence == "":
+                print(f'\nCorrect sentence:\n{self.correct_sentence}')
+                print(f'Your sentence:\n{self.sentence}')
             word = str(input("\n(Type 'q' to quit. Must type 'q' for each thread.)\nPlease add another word to the sentence: "))
             if word.lower() == 'q':
                 running = False
-                break
+                sys.exit()
             if self.lock:
                 self.add_word_locked(word)
             else:
@@ -48,7 +51,9 @@ class ThreadPractice:
             self.sentence = current_sentence
 
 if __name__ == "__main__":
-    print(f'This program .')
+    print(f'\nThis program allows you to type a sentence one word at a time.' \
+        '\nTyping words quickly when the lock causes some words to be dropped.' \
+        '\nIf the lock is on, the sentence will be displayed correctly.\n')
     locked_answer = input("Would you like to use a lock? (Please answer 'y' or 'n'): ")
     if locked_answer.lower() == "yes" or locked_answer.lower() == "y":
         locked = True
